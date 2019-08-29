@@ -3,34 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="styles.css">
     <title>Подсветка для диаграмм сущностей PlantUML</title>
 </head>
 <body>
-    <style>
-        * {box-sizing: border-box;}
-        body {margin: 0; padding: 10px 20px 40px 20px; background: #3E3E3E; color: #FFFFFF;}
-        h1 {font-family: "Times New Roman", Times, serif; font-size: 24px; text-align: center; margin: 0 0 25px 0;}
-        button {font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; background: #3D8DCA; padding: 7px 12px; cursor: pointer; color: #FFFFFF; border: solid 1px #3D8DCA; border-radius: 6px; min-width: 40px; min-height: 35px; margin-right: 5px; display: inline-block; vertical-align: middle;}
-        button:hover:not(:disabled) {border-color: #FFFFFF}
-        button:disabled {background: #8C9093; border-color: #8C9093; cursor: not-allowed;}
-        button svg {width: 15px; vertical-align: middle;}
-
-        .controls {margin-bottom: 10px;}
-        section.upload {margin-bottom: 25px;}
-        input.file {display: none;}
-        textarea {resize: none; background: #696969; color: #FFFFFF; width: 100%; height: 30vh; border: solid 1px #000000; padding: 10px; border-radius: 10px;}
-        span.file-name.error {color: #DC5C55;}
-        section.view {height: 100vh;}
-        section.view .diagram {position: relative; background: #D1D1D1; width: 100%; height: 100%; border: solid 1px #000000; border-radius: 10px; padding: 10px; overflow: hidden;}
-        section.view .diagram svg {position: absolute; left: 0; top: 10px; transform-origin: 0 0; cursor: grab; border: 3px solid black; padding: 20px;}
-        section.view .diagram svg .entity {cursor: pointer;}
-        section.view .diagram svg .entity text {pointer-events: none;}
-
-        footer {font-size: 14px; text-align: right; width: 100%; margin: 12px 0px; position: absolute; right: 20px; padding-right: 20px; text-shadow: 2px 1px black;}
-
-        .handicap-msg {position: fixed; background: rgba(0,0,0,0.9); left: 0; top: 0; width: 100vw; height: 100vh; z-index: 1; text-align: center; font-size: 30px;}
-    </style>
-
     <main>
         <noscript>
             <div class="handicap-msg">
@@ -47,14 +23,16 @@
                 <button class="svg-btn">Загрузить диаграмму (SVG)</button>
                 <span class="file-name error">Файл не выбран</span>
             </div>
-            <textarea name="code" class="code" cols="30" rows="10" readonly></textarea>
+            <textarea name="code" class="code tile" cols="30" rows="10" readonly></textarea>
         </section>
         <section class="view">
+            <div class="diagram tile"></div>
             <div class="controls">
                 <button class="fit" disabled>Вместить</button>
                 <button class="reset" disabled>Сбросить выделение</button>
             </div>
-            <div class="diagram"></div>
+            <ul class="entity-list all-list tile"></ul>
+            <ul class="entity-list active-list tile"></ul>
         </section>
     </main>
     <footer>
@@ -86,6 +64,7 @@
         let filename_label = document.getElementsByClassName('file-name')[0];
         let code_area = document.getElementsByClassName('code')[0];
         let diagram_area = document.getElementsByClassName('diagram')[0];
+        let entity_lists = Array.from(document.getElementsByClassName('entity-list')).splice(0,2);
         let reader = new FileReader();
         var current_file;
         var diagram_code;
@@ -96,7 +75,7 @@
             code_area.innerText = LOADING_STR;
         };
         reader.onloadend = function(event) {
-            try {
+            // try {
                 raw_text = event.target.result;
                 diagram_code = get_diagram_code(raw_text);
                 svg_text = get_svg(raw_text);
@@ -105,18 +84,44 @@
                 diagram_area.innerHTML = '';
                 diagram_area.appendChild(parse_diagram(diagram_code, svg_text));
                 diagram_svg = diagram_area.childNodes[0];
+                create_entity_lists();
                 fit();
                 bind_highlight();
                 bind_controls();
-            }
-            catch(err) {
-                show_error();
-            }
+            // }
+            // catch(err) {
+            //     show_error();
+            // }
         };
         reader.onerror = show_error;
 
         file_input.addEventListener('change', select_file, false);
         svg_btn.onclick = function(event) {file_input.click();};
+
+        function create_entity_lists() {
+            entity_lists.forEach(init_entity_list);
+            entity_lists.forEach(assign_entity_list);
+        }
+
+        function init_entity_list(list) {
+            list.innerHTML = '';
+            for (const [entity, num] of Object.entries(entities_to_num)) {
+                var list_item = document.createElement("li");
+                list_item.innerHTML = entity;
+                list.appendChild(list_item);
+                list_item.dataset.num = num;
+            }
+        }
+
+        function assign_entity_list(list) {
+            Array.from(list.children).forEach(function(list_item, index) {
+                var classes = Array.from(document.querySelectorAll('.entity[data-num="'+list_item.dataset.num+'"]')[0].classList);
+                list_item.classList.add('entity');
+                classes.forEach(function(class_item, index) {
+                    list_item.classList.add(class_item);
+                });
+            });
+        }
 
         function select_file(event) {
             current_file = event.target.files[0];
@@ -165,6 +170,7 @@
         function show_error() {
             filename_label.classList.add("error");
             code_area.innerText = ERROR_STR;
+            entity_lists.innerHTML = '';
             diagram_area.innerHTML = '';
             fit_btn.setAttribute('disabled', true);
             reset_btn.setAttribute('disabled', true);
@@ -289,23 +295,29 @@
         reset_btn.onclick = show_all;
         bind_keyboard();
 
+        // TODO: Реализовать относительно курсора
+        // FIX: Проблема при отдалении
         function zoom_diagram(event) {
             if (diagram_svg) {
-                var scale_diff = +diagram_svg.style.transform.replace(/[^\d|\.]/g, '');
+                var abs_coords = get_cur_coords_on_svg(event);
+                var old_coords = [Math.ceil(abs_coords[0]*-scale_factor), Math.ceil(abs_coords[1]*-scale_factor)];
+
                 if (event.deltaY < 0) {
                     scale_factor += SCALE_STEP;
                 } else {
                     scale_factor -= SCALE_STEP;
                 }
-
                 diagram_svg.style.transform = 'scale('+scale_factor+')';
-                scale_diff -= +diagram_svg.style.transform.replace(/[^\d|\.]/g, '');
 
-                //FIX: Проблемеа при отдалении
-                coords = get_cur_coords_on_svg(event);
-                console.log(coords);
-                diagram_svg.style.left = -coords[0]*(1+scale_diff)/2 +'px';
-                diagram_svg.style.top = -coords[1]*(1+scale_diff)/2 +'px';
+                var new_coords = [Math.ceil(old_coords[0]*-SCALE_STEP), Math.ceil(old_coords[1]*-SCALE_STEP)];
+
+                // console.log('abs:', abs_coords, 'old:', old_coords, 'new:', new_coords);
+                // console.log(diagram_svg.style.transformOrigin);
+                // diagram_svg.style.transformOrigin = new_coords[0] +'px ' + new_coords[1] +'px 0';
+                // diagram_svg.style.left = abs_coords[0] +'px';
+                // diagram_svg.style.top = abs_coords[1] +'px';
+                diagram_svg.style.left = -parseInt(diagram_svg.style.width*scale_factor)/2 +'px';
+                diagram_svg.style.top = -parseInt(diagram_svg.style.height*scale_factor)/2 +'px';
                 event.preventDefault();
             }
         }
@@ -324,8 +336,9 @@
 
                 scale_factor = (scale_hight < scale_width) ? scale_hight : scale_width;
                 diagram_svg.style.transform = 'scale('+scale_factor+')';
-                diagram_svg.style.left = '0px';
-                diagram_svg.style.top = '0px';
+                diagram_svg.style.transformOrigin = '0 0 0';
+                diagram_svg.style.left = 0;
+                diagram_svg.style.top = 0;
             }
         }
 
@@ -399,7 +412,7 @@
                 };
             } ());
 
-            diagram_svg.addEventListener('mousedown', panner.start_pan);
+            diagram_area.addEventListener('mousedown', panner.start_pan);
             diagram_area.addEventListener('mousemove', panner.while_pan);
             diagram_area.addEventListener('mouseup', panner.stop_pan);
             diagram_area.addEventListener('mouseout', panner.stop_pan);
@@ -415,10 +428,17 @@
                     hide_all();
                     var num = this.dataset.num;
                     var siblings = Array.from(document.getElementsByClassName(num));
+                    var selected_elems = Array.from(document.querySelectorAll('[data-num="'+num+'"]'));
+
                     siblings.forEach(function(item, index) {
-                        item.style.opacity = 1;
+                        item.classList.add('sibling');
+                        item.classList.remove('hidden');
                     });
-                    this.style.opacity = 1;
+
+                    selected_elems.forEach(function(item, index) {
+                        item.classList.add('selected');
+                        item.classList.remove('hidden');
+                    });
                 }
             });
         }
@@ -446,7 +466,6 @@
                         links_dict[num].forEach(function(item, index) {
                             entity.classList.add(item);
                         });
-
                     });
                 }
             }
@@ -455,10 +474,14 @@
         function hide_all() {
             if (entities && links) {
                 entities.forEach(function(item, index) {
-                    item.style.opacity = 0.2;
+                    item.classList.add('hidden');
+                    item.classList.remove('sibling');
+                    item.classList.remove('selected');
                 });
                 links.forEach(function(item, index) {
-                    item.style.opacity = 0.2;
+                    item.classList.add('hidden');
+                    item.classList.remove('sibling');
+                    item.classList.remove('selected');
                 });
             }
         }
@@ -466,10 +489,14 @@
         function show_all() {
             if (entities && links) {
                 entities.forEach(function(item, index) {
-                    item.style.opacity = 1;
+                    item.classList.remove('hidden');
+                    item.classList.remove('sibling');
+                    item.classList.remove('selected');
                 });
                 links.forEach(function(item, index) {
-                    item.style.opacity = 1;
+                    item.classList.remove('hidden');
+                    item.classList.remove('sibling');
+                    item.classList.remove('selected');
                 });
             }
         }

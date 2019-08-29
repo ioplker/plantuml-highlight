@@ -1,0 +1,142 @@
+/* General */
+* {box-sizing: border-box;}
+body {
+    position: relative;
+    margin: 0;
+    padding: 10px 20px 0 20px;
+    background: #3E3E3E;
+    color: #FFFFFF;
+}
+h1 {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    text-align: center;
+    margin: 0 0 25px 0;
+}
+.handicap-msg {
+    position: fixed;
+    background: rgba(0,0,0,0.9);
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    text-align: center;
+    font-size: 30px;
+}
+.tile {
+    border: solid 1px #000000;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+
+/* Controls */
+button {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    background: #3D8DCA;
+    padding: 7px 12px;
+    cursor: pointer;
+    color: #FFFFFF;
+    border: solid 1px #3D8DCA;
+    border-radius: 6px;
+    min-width: 40px;
+    min-height: 35px;
+    margin: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+button:hover:not(:disabled) {border-color: #FFFFFF}
+button:disabled {
+    background: #8C9093;
+    border-color: #8C9093;
+    cursor: not-allowed;
+}
+button svg {
+    width: 15px;
+    vertical-align: middle;
+}
+
+
+/* Upload section */
+section.upload {margin-bottom: 25px;}
+section.upload input.file {display: none;}
+section.upload textarea.code {
+    resize: none;
+    background: #696969;
+    color: #FFFFFF;
+    width: 100%;
+    height: 30vh;
+    margin-top: 10px;
+}
+span.file-name.error {color: #DC5C55;}
+
+
+/* View section */
+section.view {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: 1fr 300px;
+    grid-template-rows: auto 1fr 1fr;
+    height: 100vh;
+}
+section.view .diagram, section.view .entity-list {
+    background: #D1D1D1;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    grid-column: 1;
+}
+section.view .diagram {
+    position: relative;
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    cursor: grab;
+}
+section.view .diagram svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform-origin: 0 0;
+    border: 3px solid #000000;
+    padding: 20px;
+}
+section.view .diagram svg .entity {cursor: pointer;}
+section.view .diagram svg .entity text {pointer-events: none;}
+section.view .entity {opacity: 1;}
+section.view .entity.hidden, section.view .link.hidden {opacity: 0.2;}
+section.view .entity-list {
+    list-style: none;
+    margin: 0;
+    font-size: 18px;
+    line-height: 25px;
+    overflow: auto;
+    grid-column: 2;
+    color: #000000;
+}
+section.view .controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-gap: 10px;
+    justify-content: space-between;
+}
+section.view .entity-list .entity {cursor: pointer;}
+section.view .entity-list .entity.selected {
+    font-size: 21px;
+    text-decoration: underline;
+}
+section.view .entity-list.active-list .entity {display: none;}
+section.view .entity-list.active-list .entity.selected, section.view .entity-list.active-list .entity.sibling {display: block;}
+
+
+/* Footer */
+footer {
+    position: absolute;
+    bottom: 0;
+    font-size: 14px;
+    margin: 12px 0px;
+    padding-left: 20px;
+    text-shadow: 2px 1px #000000;
+}
