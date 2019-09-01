@@ -13,7 +13,7 @@ h1 {
     text-align: center;
     margin: 0 0 25px 0;
 }
-.handicap-msg {
+.fullpage-msg {
     position: fixed;
     background: rgba(0,0,0,0.9);
     left: 0;
@@ -100,7 +100,6 @@ section.view .diagram svg {
     left: 0;
     top: 0;
     transform-origin: 0 0;
-    border: 3px solid #000000;
     padding: 20px;
 }
 section.view .diagram svg .entity {cursor: pointer;}
