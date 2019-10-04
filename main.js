@@ -46,7 +46,7 @@ var PlantIDE = {
             var parsed_svg = PlantIDE.Parser.parse_diagram(diagram_code, svg_text);
 
             if (parsed_svg.is_error) {
-                PlantIDE.show_error();
+                PlantIDE.show_error(parsed_svg.err_msg);
             } else {
                 PlantIDE.Viewer.set_codearea_content(diagram_code);
                 diagram_svg = PlantIDE.Viewer.set_diagramarea_child(parsed_svg.content);
@@ -129,6 +129,9 @@ PlantIDE.Parser = (function() {
     var num_to_entities = Object();
     var entities_to_num = Object();
 
+    function change_brackets(svg_text) {
+        return svg_text.replace(/«/g, '{').replace(/»/g, '}');
+    }
     function get_svg_headers(svg_text) {
         return svg_text.match(/<svg.*?<\/defs>/g);
     }
@@ -136,7 +139,7 @@ PlantIDE.Parser = (function() {
         var reg = new RegExp('(class|entity|enum) [^\{]*', 'g');
 
         diagram_code.match(reg).forEach(function(item, index) {
-            var entity = item.replace(/class|entity|enum|\s/g, '');
+            var entity = item.replace(/class|entity|enum|\s/g, '').replace(/<<.*?>>/g, '');     // последний replace удаляет указание стереотипа
             num_to_entities['e'+index.toString()] = entity;
             entities_to_num[entity] = 'e'+index.toString();
         });
@@ -200,19 +203,22 @@ PlantIDE.Parser = (function() {
         num_to_entities: num_to_entities,
         parse_diagram: function(diagram_code, svg_text) {
             try {
-                // 0. Получить необходимые заголовки для парсинга DOMParser
+                // 0. Заменить «» на {} для парсинга
+                // svg_text = change_brackets(svg_text);
+
+                // 1. Получить необходимые заголовки для парсинга DOMParser
                 svg_headers = get_svg_headers(svg_text);
 
-                // 1. Узнать имена сущностей и сопоставить с числами (от нуля) - парсинг текста описания диаграммы
+                // 2. Узнать имена сущностей и сопоставить с числами (от нуля) - парсинг текста описания диаграммы
                 [entities_to_num, num_to_entities] = get_entities(diagram_code);
 
-                // 2. Добавить сущностям числа их имен - парсинг текста svg
+                // 3. Добавить сущностям числа их имен - парсинг текста svg
                 var entities_wrapper = assign_main_nums(entities_to_num, svg_text);
 
-                // 3. Сопоставить связям числа имен сущностей - парсинг текста svg
+                // 4. Сопоставить связям числа имен сущностей - парсинг текста svg
                 var links_wrapper = assign_link_nums(entities_to_num, svg_text);
 
-                // 4. Объединить обертки сущностей и связей
+                // 5. Объединить обертки сущностей и связей
                 diagram_svg = entities_wrapper.children[0];
                 diagram_svg.appendChild(links_wrapper.children[0].children[1]);
 
@@ -222,7 +228,10 @@ PlantIDE.Parser = (function() {
                 }
             }
             catch (error) {
-                return {is_error: true}
+                return {
+                    is_error: true,
+                    err_msg: error
+                }
             }
         }
     }
@@ -235,7 +244,6 @@ PlantIDE.Parser = (function() {
 */
 PlantIDE.Viewer = (function() {
     let PAN_SPEED = 0.3;
-    let MIN_PAN_STEP = 0;
     let SCALE_STEP = 0.1;
     var scale_factor = 1;
     let code_area = document.getElementsByClassName('code')[0];
@@ -266,22 +274,25 @@ PlantIDE.Viewer = (function() {
     }
     function zoom_diagram(event) {
         if (diagram_svg) {
-            // var abs_coords = get_cur_coords_on_svg(event);
-            // var old_coords = [Math.ceil(abs_coords[0]*-scale_factor), Math.ceil(abs_coords[1]*-scale_factor)];
+            var scale_mul = scale_factor;
             if (event.deltaY < 0) {
                 scale_factor += SCALE_STEP;
             } else {
                 scale_factor -= SCALE_STEP;
             }
+            scale_mul = scale_factor/scale_mul;
             diagram_svg.style.transform = 'scale('+scale_factor+')';
-            // var new_coords = [Math.ceil(old_coords[0]*-SCALE_STEP), Math.ceil(old_coords[1]*-SCALE_STEP)];
-            // console.log('abs:', abs_coords, 'old:', old_coords, 'new:', new_coords);
-            // console.log(diagram_svg.style.transformOrigin);
-            // diagram_svg.style.transformOrigin = new_coords[0] +'px ' + new_coords[1] +'px 0';
-            // diagram_svg.style.left = abs_coords[0] +'px';
-            // diagram_svg.style.top = abs_coords[1] +'px';
-            diagram_svg.style.left = -parseInt(diagram_svg.style.width*scale_factor)/2 +'px';
-            diagram_svg.style.top = -parseInt(diagram_svg.style.height*scale_factor)/2 +'px';
+            var new_coords = get_svg_coords(scale_mul);
+            // diagram_svg.style.transformOrigin = new_coords[0] + 'px ' + new_coords[1] + 'px';
+            // diagram_svg.style.left = -Math.ceil(new_coords[0]*scale_mul) + 'px';
+            // diagram_svg.style.top = -Math.ceil(new_coords[1]*scale_mul) + 'px';
+
+            // <DEBUG>
+            // var debug_dot = document.getElementById('debug-dot');
+            // debug_dot.style.left = new_coords[0] + 'px';
+            // debug_dot.style.top = new_coords[1] + 'px';
+            // debug_dot.innerText = new_coords;
+            // </DEBUG>
             event.preventDefault();
         }
     }
@@ -294,8 +305,20 @@ PlantIDE.Viewer = (function() {
             pageX = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
             pageY = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
         }
-        // console.log(pageX, pageY);
         return [pageX, pageY];
+    }
+    function get_svg_coords(scale_mul) {
+        var area_x = diagram_area.getBoundingClientRect().x
+        var area_y = diagram_area.getBoundingClientRect().y
+        var svg_x = diagram_svg.getBoundingClientRect().x
+        var svg_y = diagram_svg.getBoundingClientRect().y
+        var cursor_coords = get_cursor_coords();
+        var relative_coords = [
+            cursor_coords[0] - svg_x,
+            cursor_coords[1] - svg_y
+        ];
+        console.log('cursor:', cursor_coords, 'area:', [area_x, area_y], 'svg:', [svg_x, svg_y], 'return:', relative_coords, 'scale_mul:', scale_mul);
+        return relative_coords;
     }
     function fit() {
         if (diagram_svg) {
@@ -341,11 +364,9 @@ PlantIDE.Viewer = (function() {
                         new_coords = get_cursor_coords();
                         delta_x = last_coords[0] - new_coords[0];
                         delta_y = last_coords[1] - new_coords[1];
-                        if (delta_x > MIN_PAN_STEP || delta_x < -MIN_PAN_STEP || delta_y > MIN_PAN_STEP || delta_y < -MIN_PAN_STEP) {
-                            diagram_svg.style.left = (parseInt(diagram_svg.style.left) - delta_x) + 'px';
-                            diagram_svg.style.top = (parseInt(diagram_svg.style.top) - delta_y) + 'px';
+                        diagram_svg.style.left = (parseInt(diagram_svg.style.left) - delta_x) + 'px';
+                        diagram_svg.style.top = (parseInt(diagram_svg.style.top) - delta_y) + 'px';
                         last_coords = get_cursor_coords();
-                        }
                     }
                 }
             };
@@ -438,7 +459,7 @@ PlantIDE.Viewer = (function() {
 
     return {
         LOADING_STR: 'Идет загрузка...',
-        ERROR_STR: 'Ошибка загрузки.',
+        ERROR_STR: 'Ошибка загрузки:\n',
         reload: function() {
             diagram_area.onwheel = zoom_diagram;
             fit_btn.onclick = fit;
@@ -446,6 +467,13 @@ PlantIDE.Viewer = (function() {
             bind_highlight();
             bind_pan();
             fit();
+
+            // <DEBUG>
+            // var debug_dot = document.createElement("div");
+            // debug_dot.setAttribute('id', 'debug-dot');
+            // debug_dot.setAttribute('style', 'position: absolute; width: 5px; height: 5px; background: red;');
+            // diagram_area.appendChild(debug_dot);
+            // </DEBUG>
         },
         set_codearea_content: function(text) {code_area.innerHTML = text;},
         set_diagramarea_child: function(content) {
@@ -454,9 +482,9 @@ PlantIDE.Viewer = (function() {
             return diagram_area.childNodes[0];
         },
         set_filename_text: function(text) {filename_label.innerText = text},
-        show_error: function() {
+        show_error: function(err_msg) {
             filename_label.classList.add("error");
-            PlantIDE.Viewer.set_codearea_content(PlantIDE.Viewer.ERROR_STR);
+            PlantIDE.Viewer.set_codearea_content(PlantIDE.Viewer.ERROR_STR+err_msg);
             entity_lists.forEach(function(item, index) {item.innerHTML = ''});
             diagram_area.innerHTML = '';
             fit_btn.setAttribute('disabled', true);
