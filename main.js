@@ -1,6 +1,6 @@
 /*
-Корень.
-Связывает дочерние объекты.
+Корень
+Связывает дочерние объекты
 */
 var PlantIDE = {
     get_file: function(event) {
@@ -61,8 +61,8 @@ var PlantIDE = {
 
 
 /*
-Загружает файл диаграммы.
-Возвращает текст описания и объект SVG.
+Загружает файл диаграммы
+Возвращает текст описания и объект SVG
 */
 PlantIDE.Loader = (function() {
     var current_file, diagram_code, svg_text, diagram_svg;
@@ -121,8 +121,8 @@ PlantIDE.Loader = (function() {
 
 
 /*
-Парсит и модифицирует SVG.
-Возвращает новый объект SVG.
+Парсит и модифицирует SVG
+Возвращает новый объект SVG
 */
 PlantIDE.Parser = (function() {
     let svg_headers;
@@ -239,13 +239,15 @@ PlantIDE.Parser = (function() {
 
 
 /*
-Привязывает события управления SVG и выделения объектов.
-Отображает ошибки, SVG, код описания и прочее.
+Привязывает события управления SVG и выделения объектов
+Отображает ошибки, SVG, код описания и прочее
 */
 PlantIDE.Viewer = (function() {
-    let PAN_SPEED = 0.3;
-    let SCALE_STEP = 0.1;
+    let PAN_SPEED = 2;
+    let SCALE_STEP = 1.5;
     var scale_factor = 1;
+    var fit_scale_factor;
+
     let code_area = document.getElementsByClassName('code')[0];
     let diagram_area = document.getElementsByClassName('diagram')[0];
     let filename_label = document.getElementsByClassName('file-name')[0];
@@ -274,27 +276,73 @@ PlantIDE.Viewer = (function() {
     }
     function zoom_diagram(event) {
         if (diagram_svg) {
-            var scale_mul = scale_factor;
             if (event.deltaY < 0) {
-                scale_factor += SCALE_STEP;
+                zoom_in();
             } else {
-                scale_factor -= SCALE_STEP;
+                zoom_out();
             }
-            scale_mul = scale_factor/scale_mul;
-            diagram_svg.style.transform = 'scale('+scale_factor+')';
-            var new_coords = get_svg_coords(scale_mul);
-            // diagram_svg.style.transformOrigin = new_coords[0] + 'px ' + new_coords[1] + 'px';
-            // diagram_svg.style.left = -Math.ceil(new_coords[0]*scale_mul) + 'px';
-            // diagram_svg.style.top = -Math.ceil(new_coords[1]*scale_mul) + 'px';
-
-            // <DEBUG>
-            // var debug_dot = document.getElementById('debug-dot');
-            // debug_dot.style.left = new_coords[0] + 'px';
-            // debug_dot.style.top = new_coords[1] + 'px';
-            // debug_dot.innerText = new_coords;
-            // </DEBUG>
+            // var moveto_coords = get_svg_coords();
+            // set_svg_coords(moveto_coords);
             event.preventDefault();
         }
+    }
+    function zoom_in() {
+        scale_factor *= SCALE_STEP;
+        set_svg_scale(scale_factor);
+    }
+    function zoom_out() {
+        scale_factor /= SCALE_STEP;
+        set_svg_scale(scale_factor);
+    }
+    function set_svg_scale(scale_factor) {
+        diagram_svg.style.transform = 'scale('+scale_factor+')';
+    }
+    function get_svg_coords() {
+        // через transformOrigin
+        // var origin_coords = diagram_svg.style.transformOrigin.split(' ');
+        // return {
+        //     x: parseInt(origin_coords[0]),
+        //     y: parseInt(origin_coords[1])
+        // };
+
+        // через left-top
+        return {
+            x: parseInt(diagram_svg.style.left),
+            y: parseInt(diagram_svg.style.top)
+        }
+    }
+    function set_svg_coords(coords) {
+        // через transformOrigin
+        // diagram_svg.style.transformOrigin = Math.ceil(coords.x) + 'px ' + Math.ceil(coords.y) + 'px';
+
+        // через left-top
+        diagram_svg.style.left = coords.x + 'px';
+        diagram_svg.style.top = coords.y + 'px';
+        // console.log(coords);
+    }
+    function move_left() {
+        var step = diagram_svg.getBoundingClientRect().width * 0.05;
+        var origin_coords = get_svg_coords();
+        origin_coords.x += step;
+        set_svg_coords(origin_coords);
+    }
+    function move_right() {
+        var step = diagram_svg.getBoundingClientRect().width * 0.05;
+        var origin_coords = get_svg_coords();
+        origin_coords.x -= step;
+        set_svg_coords(origin_coords);
+    }
+    function move_up() {
+        var step = diagram_svg.getBoundingClientRect().height * 0.05;
+        var origin_coords = get_svg_coords();
+        origin_coords.y += step;
+        set_svg_coords(origin_coords);
+    }
+    function move_down() {
+        var step = diagram_svg.getBoundingClientRect().height * 0.05;
+        var origin_coords = get_svg_coords();
+        origin_coords.y -= step;
+        set_svg_coords(origin_coords);
     }
     function get_cursor_coords(event) {
         event = event || window.event;
@@ -305,40 +353,111 @@ PlantIDE.Viewer = (function() {
             pageX = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
             pageY = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
         }
-        return [pageX, pageY];
+        return {
+            x: pageX,
+            y: pageY
+        };
     }
-    function get_svg_coords(scale_mul) {
-        var area_x = diagram_area.getBoundingClientRect().x
-        var area_y = diagram_area.getBoundingClientRect().y
-        var svg_x = diagram_svg.getBoundingClientRect().x
-        var svg_y = diagram_svg.getBoundingClientRect().y
-        var cursor_coords = get_cursor_coords();
-        var relative_coords = [
-            cursor_coords[0] - svg_x,
-            cursor_coords[1] - svg_y
-        ];
-        console.log('cursor:', cursor_coords, 'area:', [area_x, area_y], 'svg:', [svg_x, svg_y], 'return:', relative_coords, 'scale_mul:', scale_mul);
-        return relative_coords;
+    function calc_svg_coords() {
+        var scale_mul = scale_factor / fit_scale_factor;
+        var area_coords = {
+            x: diagram_area.getBoundingClientRect().x,
+            y: diagram_area.getBoundingClientRect().y
+        };
+        var svg_coords = {
+            x: diagram_svg.getBoundingClientRect().x,
+            y: diagram_svg.getBoundingClientRect().y
+        };
+        var origin_coords = get_svg_coords();
+        var cursor_abs_coords = get_cursor_coords();
+        var cursor_coords = {
+            x: cursor_abs_coords.x - area_coords.x,
+            y: cursor_abs_coords.y - area_coords.y - document.querySelector('html').scrollTop
+        };
+
+        // TODO: Координаты курсора в систему svg, а не контейнера + учет старого transformOrigin
+        var new_svg_coords = {
+            x: Math.ceil(cursor_coords.x - cursor_coords.x*scale_mul),
+            y: Math.ceil(cursor_coords.y - cursor_coords.y*scale_mul)
+        };
+        // console.log('cursor:', cursor_coords, 'area:', area_coords, 'svg:', svg_coords, 'new_svg:', new_svg_coords, 'scale_factor:', scale_factor, 'scale_mul:', scale_mul);
+        return new_svg_coords;
     }
     function fit() {
         if (diagram_svg) {
-            var scale_hight = diagram_area.clientHeight / (diagram_svg.clientHeight+20);
-            var scale_width = diagram_area.clientWidth / (diagram_svg.clientWidth+20);
+            var scale_width = diagram_area.clientWidth / diagram_svg.clientWidth;
+            var scale_hight = diagram_area.clientHeight / diagram_svg.clientHeight;
             scale_factor = (scale_hight < scale_width) ? scale_hight : scale_width;
-            diagram_svg.style.transform = 'scale('+scale_factor+')';
-            diagram_svg.style.transformOrigin = '0 0 0';
-            diagram_svg.style.left = 0;
-            diagram_svg.style.top = 0;
+            fit_scale_factor = scale_factor;
+            set_svg_scale(scale_factor);
+            set_svg_coords({x: 0, y: 0});
         }
     }
     function bind_keyboard() {
-        document.onkeyup = function(event) {
+        document.onkeydown = function(event) {
+            // console.log(event.which);
             switch (event.which) {
+                case 37:
+                    move_left();
+                    event.preventDefault();
+                    break;
+                case 38:
+                    move_up();
+                    event.preventDefault();
+                    break;
+                case 39:
+                    move_right();
+                    event.preventDefault();
+                    break;
+                case 40:
+                    move_down();
+                    event.preventDefault();
+                    break;
                 case 82:
                     show_all_elems();
                     break;
                 case 70:
                     fit();
+                    break;
+                case 96:
+                    show_all_elems();
+                    break;
+                case 97:
+                    move_left();
+                    move_down();
+                    break;
+                case 98:
+                    move_down();
+                    break;
+                case 99:
+                    move_right();
+                    move_down();
+                    break;
+                case 100:
+                    move_left();
+                    break;
+                case 101:
+                    fit();
+                    break;
+                case 102:
+                    move_right();
+                    break;
+                case 103:
+                    move_left();
+                    move_up();
+                    break;
+                case 105:
+                    move_up();
+                    move_right();
+                    break;
+                case 104:
+                    move_up();
+                    break;
+                case 107:
+                    zoom_in();
+                    break;
+                case 109:
+                    zoom_out();
                     break;
                 default:
                     break;
@@ -347,13 +466,16 @@ PlantIDE.Viewer = (function() {
     }
     function bind_pan() {
         var panner = (function () {
-            var last_coords = [0,0];
-            var new_coords;
+            var last_cursor_coords = {x: 0, y: 0};
+            var new_cursor_coords;
+            var prev_coords;
+            var moveto_coords;
+            var origin_coords;
+            var scale_mul = scale_factor / fit_scale_factor;
             var is_panning = false;
-            var delta_x, delta_y;
             return {
                 start_pan: function (event) {
-                    last_coords = get_cursor_coords();
+                    last_cursor_coords = get_cursor_coords();
                     is_panning = true;
                 },
                 stop_pan: function (event) {
@@ -361,12 +483,29 @@ PlantIDE.Viewer = (function() {
                 },
                 while_pan: function (event) {
                     if (is_panning) {
-                        new_coords = get_cursor_coords();
-                        delta_x = last_coords[0] - new_coords[0];
-                        delta_y = last_coords[1] - new_coords[1];
-                        diagram_svg.style.left = (parseInt(diagram_svg.style.left) - delta_x) + 'px';
-                        diagram_svg.style.top = (parseInt(diagram_svg.style.top) - delta_y) + 'px';
-                        last_coords = get_cursor_coords();
+                        // через left-top
+                        new_cursor_coords = get_cursor_coords();
+                        moveto_coords = get_svg_coords();
+                        moveto_coords = {
+                            x: (moveto_coords.x - (last_cursor_coords.x - new_cursor_coords.x)),
+                            y: (moveto_coords.y - (last_cursor_coords.y - new_cursor_coords.y))
+                        };
+                        set_svg_coords(moveto_coords);
+                        last_cursor_coords = get_cursor_coords();
+
+                        // через style.transformOrigin
+                        // new_cursor_coords = get_cursor_coords();
+                        // origin_coords = get_svg_coords();
+                        // prev_coords = {
+                        //     x: parseInt(origin_coords.x),
+                        //     y: parseInt(origin_coords.y)
+                        // };
+                        // moveto_coords = {
+                        //     x: Math.ceil(prev_coords.x - (last_cursor_coords.x - new_cursor_coords.x)*scale_mul*PAN_SPEED),
+                        //     y: Math.ceil(prev_coords.y - (last_cursor_coords.y - new_cursor_coords.y)*scale_mul*PAN_SPEED)
+                        // };
+                        // set_svg_coords(moveto_coords);
+                        // last_cursor_coords = get_cursor_coords();
                     }
                 }
             };
@@ -465,15 +604,9 @@ PlantIDE.Viewer = (function() {
             fit_btn.onclick = fit;
             reset_btn.onclick = show_all_elems;
             bind_highlight();
-            bind_pan();
             fit();
-
-            // <DEBUG>
-            // var debug_dot = document.createElement("div");
-            // debug_dot.setAttribute('id', 'debug-dot');
-            // debug_dot.setAttribute('style', 'position: absolute; width: 5px; height: 5px; background: red;');
-            // diagram_area.appendChild(debug_dot);
-            // </DEBUG>
+            bind_pan();
+            bind_keyboard();
         },
         set_codearea_content: function(text) {code_area.innerHTML = text;},
         set_diagramarea_child: function(content) {
@@ -499,40 +632,32 @@ PlantIDE.Viewer = (function() {
             fit_btn.removeAttribute('disabled');
             reset_btn.removeAttribute('disabled');
         },
-        bind_controls: function() {
-            diagram_area.onwheel = zoom_diagram;
-            fit_btn.onclick = fit;
-            reset_btn.onclick = show_all_elems;
-            bind_pan();
-            bind_highlight();
-            bind_keyboard();
-        }
     }
 })();
 
 
 /* --- Не реализовано --- */
 /*
-Сохраняет готовую диаграмму вместе с кодом описания.
+Сохраняет готовую диаграмму вместе с кодом описания
 */
 PlantIDE.Exporter = (function() {})();
 
 
 /*
-Загружает готовую диаграмму вместе с кодом описания.
+Загружает готовую диаграмму вместе с кодом описания
 */
 PlantIDE.Importer = (function() {})();
 
 
 /*
-Правка кода.
-Возвращает новую диаграмму и код описания.
+Правка кода
+Возвращает новую диаграмму и код описания
 */
 PlantIDE.Coder = (function() {})();
 
 
 /*
-Уведомление о поддержке API.
+Уведомление о поддержке API
 */
 if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
     show_fullpage_msg("Ваш браузер не поддерживает API для работы с файлами. Погуглите.");
