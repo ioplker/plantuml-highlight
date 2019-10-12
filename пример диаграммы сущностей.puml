@@ -1,0 +1,67 @@
+@startuml
+/' --- Оформление --- '/
+skinparam BackgroundColor #FFFFFF
+skinparam ArrowColor #000000
+'skinparam linetype ortho
+
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor Red
+skinparam titleBackgroundColor Cyan
+
+skinparam ClassBorderColor #000000
+skinparam ClassBackgroundColor #FFFFFF
+
+/' --- Справочники --- '/
+enum Статус_записи {
+Опубликована
+Черновик
+Скрыта
+}
+
+
+/' --- Модели --- '/
+class Блогер {
+* Имя : Текст
+Комментарий : Текст
+}
+
+class Блог {
+* Владелец : id {{Блогер}}
+* Заголовок : Текст
+* Дата создания : ДатаВремя
+Описание : Текст
+}
+
+class Запись {
+* Блог : id {{Блог}}
+* Заголовок : Текст
+* Контент : Текст
+* Дата изменения : ДатаВремя
+* Статус : Элемент списка {{Статус_записи}}
+События : id {{Событие}}
+Места : id {{Место}}
+}
+
+class Событие {
+* Название : Текст
+* Дата : ДатаВремя
+Описание : Текст
+Место : id {{Место}}
+}
+
+class Место {
+* Название : Текст
+Адрес : Текст
+}
+
+
+/' --- Связи --- '/
+Блог --|| Блогер
+Запись --|| Блог
+Запись --|| Статус_записи
+Запись --o{ Событие
+Запись --o{ Место
+Событие --o| Место
+
+@enduml

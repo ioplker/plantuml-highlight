@@ -253,6 +253,7 @@ PlantIDE.Parser = (function() {
             Перенаправление на нужный парсер
             */
             // console.log(scheme_type);
+            svg_text = svg_text.replace(/<\!--reverse link/g, '<!--link');
             switch (scheme_type) {
                 case "entity":
                     return parse_entity_scheme(diagram_code, svg_text);
@@ -1103,18 +1104,19 @@ PlantIDE.Viewer = (function() {
         Array.from(document.getElementsByClassName('node')).forEach(function(node, index) {
             var tooltip = node.getElementsByClassName('tooltip')[0];
             node.onmouseover = function(event) {
-                console.log(get_cursor_coords(event));
-                console.log(tooltip.innerHTML);
                 var coords = get_cursor_coords(event);
-                tooltip_box.innerHTML = tooltip.innerHTML;
-                tooltip_box.style.left = coords.x.toString()+'px';
-                tooltip_box.style.top = (coords.y-40).toString()+'px';
-                tooltip_box.classList.add('active');
+                if (typeof tooltip !== 'undefined') {
+                    tooltip_box.innerHTML = tooltip.innerHTML;
+                    tooltip_box.style.left = coords.x.toString()+'px';
+                    tooltip_box.style.top = (coords.y-40).toString()+'px';
+                    tooltip_box.classList.add('active');
+                }
             }
             node.onmouseout = function(event) {
-                console.log(get_cursor_coords(event));
-                tooltip_box.classList.remove('active');
-                tooltip_box.innerHTML = '';
+                if (typeof tooltip !== 'undefined') {
+                    tooltip_box.classList.remove('active');
+                    tooltip_box.innerHTML = '';
+                }
             }
         })
     }
