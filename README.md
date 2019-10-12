@@ -1,8 +1,8 @@
 # plantuml-highlight
 Микро-MVP SVG-парсер диаграмм сущностей, созданных в PlantUML.
 
-![alt text](https://github.com/ioplker/plantuml-highlight/blob/master/entity diagram.png)
-![alt text](https://github.com/ioplker/plantuml-highlight/blob/master/precedence diagram.png)
+![alt text](https://github.com/ioplker/plantuml-highlight/blob/master/entity_diagram.png)
+![alt text](https://github.com/ioplker/plantuml-highlight/blob/master/precedence_diagram.png)
 
 1. Бежишь на сервер PlantUML ([тут](http://www.plantuml.com/plantuml/uml/VPF1IiD048Rl-nGv2tq1JtqJ4Un1i2reUf2caAIW1mMr28ge42zUjxQBCMdYA_ppHiwm8RZRj9IMTFz_ljb_fkrVXCVduMHufWQZy3Iy3F204ZLMC1G7KtKGu1aRkWiE0tp0eA24KeKNjcpuPL1H2aqnSloudfdoaHQtu2yQQ_QLC7GbHHbTysFAdpaAXIVMVv5JWdnR_OTjVNHhqO_GSXifQXwne1X60eWk1IlKSXjyyRleICLvRAgTQJ9sBUc6VJcCRVp6u6z6QbHow67VcpI-weDVOUG8TITKuHvhYiLZYoP3cKqgGMbEoH6RsxanGThI74kKCZVK3KahVCfkKScH7NY6Wc9912revVm6egZNYwRj4hV5SOVO2CwEbBEm6LEZtG4yyzXhuuYsbRkNRaixuRruIQPS75jyGdymEk7_pHy0) тестовая диаграмма, можешь поиграться).
 2. Качаешь SVG-версию диаграммы ([ссылка сразу на SVG, ленивая задница](http://www.plantuml.com/plantuml/svg/VPF1IiD048Rl-nGv2tq1JtqJ4Un1i2reUf2caAIW1mMr28ge42zUjxQBCMdYA_ppHiwm8RZRj9IMTFz_ljb_fkrVXCVduMHufWQZy3Iy3F204ZLMC1G7KtKGu1aRkWiE0tp0eA24KeKNjcpuPL1H2aqnSloudfdoaHQtu2yQQ_QLC7GbHHbTysFAdpaAXIVMVv5JWdnR_OTjVNHhqO_GSXifQXwne1X60eWk1IlKSXjyyRleICLvRAgTQJ9sBUc6VJcCRVp6u6z6QbHow67VcpI-weDVOUG8TITKuHvhYiLZYoP3cKqgGMbEoH6RsxanGThI74kKCZVK3KahVCfkKScH7NY6Wc9912revVm6egZNYwRj4hV5SOVO2CwEbBEm6LEZtG4yyzXhuuYsbRkNRaixuRruIQPS75jyGdymEk7_pHy0)).
