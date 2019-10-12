@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link type="text/css" rel="stylesheet" href="styles.css">
-    <title>Подсветка для диаграмм сущностей PlantUML</title>
+    <title>Подсветка диаграмм PlantUML</title>
 </head>
 <body>
     <main>
@@ -16,29 +16,81 @@
                 </p>
             </div>
         </noscript>
-        <h1>Подсветка для диаграмм сущностей PlantUML</h1>
-        <section class="upload">
-            <div class="controls">
-                <input type="file" name="svg-src" class="file">
-                <button class="svg-btn">Загрузить диаграмму (SVG)</button>
-                <span class="file-name error">Файл не выбран</span>
-            </div>
-            <textarea name="code" class="code tile" cols="30" rows="10" readonly></textarea>
-        </section>
+        <h1>Подсветка диаграмм PlantUML</h1>
         <section class="view">
-            <div class="diagram tile"></div>
             <div class="controls">
                 <button class="fit" disabled>Вместить</button>
                 <button class="reset" disabled>Сбросить выделение</button>
+                <input type="file" name="svg-src" class="file" accept="image/svg+xml">
+                <button class="svg-btn">Загрузить диаграмму (SVG)</button>
+                <span class="file-name error">Файл не выбран</span>
+                <div class="fullpage-msg scheme-type">
+                    <p>Какую диаграмму загружаем?</p>
+                    <input type="radio" name="scheme" id="entity-scheme_radio" value="entity">
+                    <label class="button" for="entity-scheme_radio">1. Диаграмма сущностей</label><br>
+                    <input type="radio" name="scheme" id="precedence-scheme_radio" value="precedence">
+                    <label class="button" for="precedence-scheme_radio">2. Диаграмма прецедентов</label>
+                </div>
             </div>
-            <ul class="entity-list all-list tile"></ul>
-            <ul class="entity-list active-list tile"></ul>
+            <div class="diagram tile"></div>
+            <div id="tooltip-box"></div>
+            <ul class="node-list active-list tile"></ul>
+            <ul class="node-list all-list tile"></ul>
+            <div class="help">
+                <div class="fullpage-msg controls-help">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Сочетание клавиш</th>
+                                <th>Действие</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>мышь</td>
+                                <td>перемещение, выделение объектов</td>
+                            </tr>
+                            <tr>
+                                <td>колесико мыши, +, -, E, Q</td>
+                                <td>зум</td>
+                            </tr>
+                            <tr>
+                                <td>клавиши-стрелки, нумпад, WASD</td>
+                                <td>перемещение</td>
+                            </tr>
+                            <!-- <tr>
+                                <td>Tab, Shift+Tab</td>
+                                <td>переход между объектами</td>
+                            </tr> -->
+                            <tr>
+                                <td>H</td>
+                                <td>вызов справки</td>
+                            </tr>
+                            <tr>
+                                <td>O</td>
+                                <td>открытие схемы</td>
+                            </tr>
+                            <tr>
+                                <td>F</td>
+                                <td>вмещение схемы в окно просмотра</td>
+                            </tr>
+                            <tr>
+                                <td>R</td>
+                                <td>сброс выделения объектов</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="copyleft">
+                    "H" для справки<br>
+                    <a href="https://github.com/ioplker" target="_blank" style="color: #99FF99">ioplker</a>
+                </div>
+            </div>
+        </section>
+        <section class="upload">
+            <textarea name="code" class="code tile" cols="30" rows="10" readonly></textarea>
         </section>
     </main>
-    <footer>
-        <div class="controls">Controls: mouse, mouse wheel, arrows, numpad, "+", "-", "f", "r"</div>
-        <div class="copyleft">by <a href="https://github.com/ioplker" target="_blank" style="color: #99FF99">ioplker</a></div>
-    </footer>
 
     <script src="main.js"></script>
 </body>

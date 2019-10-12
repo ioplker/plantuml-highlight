@@ -14,6 +14,14 @@ h1 {
     margin: 0 0 25px 0;
 }
 .fullpage-msg {
+    display: none;
+    -webkit-flex-direction: column;
+    -moz-flex-direction: column;
+    -ms-flex-direction: column;
+    -o-flex-direction: column;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     background: rgba(0,0,0,0.9);
     left: 0;
@@ -24,6 +32,7 @@ h1 {
     text-align: center;
     font-size: 30px;
 }
+.fullpage-msg.active {display: flex;}
 .tile {
     border: solid 1px #000000;
     padding: 10px;
@@ -32,7 +41,7 @@ h1 {
 
 
 /* Controls */
-button {
+button, .button {
     font-family: Arial, Helvetica, sans-serif;
     font-size: 14px;
     font-weight: bold;
@@ -48,8 +57,8 @@ button {
     display: inline-block;
     vertical-align: middle;
 }
-button:hover:not(:disabled) {border-color: #FFFFFF}
-button:disabled {
+button:hover:not(:disabled), .button:hover:not(:disabled) {border-color: #FFFFFF}
+button:disabled, .button:disabled {
     background: #8C9093;
     border-color: #8C9093;
     cursor: not-allowed;
@@ -61,8 +70,7 @@ button svg {
 
 
 /* Upload section */
-section.upload {margin-bottom: 25px;}
-section.upload input.file {display: none;}
+section.upload {margin-bottom: 20px;}
 section.upload textarea.code {
     resize: none;
     background: #696969;
@@ -71,18 +79,25 @@ section.upload textarea.code {
     height: 30vh;
     margin-top: 10px;
 }
-span.file-name.error {color: #DC5C55;}
 
 
 /* View section */
 section.view {
+    position: relative;
     display: grid;
     grid-gap: 10px;
-    grid-template-columns: 1fr 300px;
+    grid-template-columns: 300px 1fr;
     grid-template-rows: auto 1fr 1fr;
     height: 100vh;
+    padding-bottom: 75px;
+    margin-bottom: -75px;
 }
-section.view .diagram, section.view .entity-list {
+section.view input.file {display: none;}
+section.view .controls span.file-name {padding-left: 15px;}
+section.view .controls span.file-name.error {color: #DC5C55;}
+section.view .controls .scheme-type input[type="radio"] {display: none;}
+section.view .controls .scheme-type label {margin: 5px;}
+section.view .diagram, section.view .node-list {
     background: #D1D1D1;
     width: 100%;
     height: 100%;
@@ -91,51 +106,100 @@ section.view .diagram, section.view .entity-list {
 }
 section.view .diagram {
     position: relative;
-    grid-column: 1;
-    grid-row: 1 / span 3;
+    grid-column: 2;
+    grid-row: 2 / span 2;
     cursor: grab;
+    padding: 0;
 }
 section.view .diagram svg {
     position: absolute;
     left: 0;
     top: 0;
     transform-origin: 0 0;
-    padding: 20px;
 }
-section.view .diagram svg .entity {cursor: pointer;}
-section.view .diagram svg .entity text {pointer-events: none;}
-section.view .entity {opacity: 1;}
-section.view .entity.hidden, section.view .link.hidden {opacity: 0.2;}
-section.view .entity-list {
+section.view .diagram svg .node {cursor: pointer;}
+section.view .diagram svg text {
+    pointer-events: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select:none;
+    -khtml-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    -o-user-select:none;
+    user-select:none;
+}
+section.view #tooltip-box {
+    display: none;
+    position: absolute;
+    font-size: 21px;
+    background: rgba(0,0,0,0.8);
+    padding: 7px 15px;
+    border-radius: 0px 10px 0px 10px;
+}
+section.view #tooltip-box.active {display: block;}
+section.view .node {opacity: 1;}
+section.view .node.hidden, section.view .link.hidden {opacity: 0.2;}
+section.view .node-list {
+    display: flex;
+    -webkit-flex-direction: column;
+    -moz-flex-direction: column;
+    -ms-flex-direction: column;
+    -o-flex-direction: column;
+    flex-direction: column;
     list-style: none;
     margin: 0;
     font-size: 18px;
     line-height: 25px;
     overflow: auto;
-    grid-column: 2;
+    grid-row: 2;
+    grid-column: 1;
     color: #000000;
 }
+section.view .node-list.all-list {grid-row: 3;}
 section.view .controls {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-gap: 10px;
-    justify-content: space-between;
+    grid-row: 1;
+    grid-column: 1 / span 2;
 }
-section.view .entity-list .entity {cursor: pointer;}
-section.view .entity-list .entity.selected {
+section.view .node-list .node {cursor: pointer;}
+section.view .node-list.active-list .node.selected {
+    position: relative;
+    -webkit-order: -1;
+    -moz-order: -1;
+    -ms-order: -1;
+    -o-order: -1;
+    order: -1;
+    font-size: 21px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+section.view .node-list.all-list .node.selected {
     font-size: 21px;
     text-decoration: underline;
 }
-section.view .entity-list.active-list .entity {display: none;}
-section.view .entity-list.active-list .entity.selected, section.view .entity-list.active-list .entity.sibling {display: block;}
-
-
-/* Footer */
-footer {
+section.view .node-list.active-list .node.selected:after {
+    content: '';
+    display: block;
     position: absolute;
-    bottom: 0;
+    left: 0;
+    bottom: -5px;
+    width: 100px;
+    height: 3px;
+    background: #3D8DCA;
+}
+section.view .node-list.active-list .node {display: none;}
+section.view .node-list.active-list .node.selected, section.view .node-list.active-list .node.sibling {display: block;}
+
+
+/* Help */
+.help {
+    position: absolute;
+    bottom: 95px;
+    right: 20px;
+    text-align: right;
     font-size: 14px;
-    margin: 12px 0px;
-    padding-left: 20px;
     text-shadow: 2px 1px #000000;
 }
+.help a {text-decoration: none;}
+.help table {text-align: left;}
+.help table th:last-child, .help table td:last-child {padding-left: 40px;}
+.help table td {font-size: 20px;}
