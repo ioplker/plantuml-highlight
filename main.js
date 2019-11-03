@@ -9,26 +9,30 @@ var PlantIDE = {
         Отображение окна с выбором типа диаграммы
         Устанавливает доступные горячие клавиши
         Влияет на выбор применяемого парсера
-         */
-        let scheme_type_dialog = document.querySelector('.fullpage-msg.scheme-type');
-        scheme_type_dialog.classList.add('active');
+        */
+        if (!PlantIDE.Viewer.is_modal_open()) {
+            PlantIDE.Viewer.set_modal_open(true);
 
-        let entity_scheme_type_radio = document.getElementById('entity-scheme_radio');
-        let precedence_scheme_type_radio = document.getElementById('precedence-scheme_radio');
-        document.onkeydown = function(event) {
-            // console.log(event.which);
-            switch (event.which) {
-                case 27:  // Escape
-                    PlantIDE.hide_scheme_dialog();
-                    break;
-                case 49:  // 1
-                    entity_scheme_type_radio.click();
-                    break;
-                case 50:  // 2
-                    precedence_scheme_type_radio.click();
-                    break;
-                default:
-                    break;
+            let scheme_type_dialog = document.querySelector('.fullpage-msg.scheme-type');
+            scheme_type_dialog.classList.add('active');
+
+            let entity_scheme_type_radio = document.getElementById('entity-scheme_radio');
+            let precedence_scheme_type_radio = document.getElementById('precedence-scheme_radio');
+            document.onkeydown = function(event) {
+                // console.log(event.which);
+                switch (event.which) {
+                    case 27:  // Escape
+                        PlantIDE.hide_scheme_dialog();
+                        break;
+                    case 49:  // 1
+                        entity_scheme_type_radio.click();
+                        break;
+                    case 50:  // 2
+                        precedence_scheme_type_radio.click();
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     },
@@ -37,6 +41,8 @@ var PlantIDE = {
         Скрытие окна с выбором типа диаграммы
         Устанавливает доступные горячие клавиши
         */
+        PlantIDE.Viewer.set_modal_open(false);
+
         let scheme_type_dialog = document.querySelector('.fullpage-msg.scheme-type');
         scheme_type_dialog.classList.remove('active');
         PlantIDE.Viewer.bind_keyboard();
@@ -433,6 +439,7 @@ PlantIDE.Parser.EntityParser = (function() {
                 return return_content(diagram_svg);
             }
             catch (error) {
+                console.log(error);
                 return return_error(error);
             }
         },
@@ -615,6 +622,7 @@ PlantIDE.Parser.PrecedenceParser = (function() {
                 return return_content(diagram_svg);
             }
             catch (error) {
+                console.log(error);
                 return return_error(error);
             }
         },
@@ -637,6 +645,7 @@ PlantIDE.Viewer = (function() {
     let SCALE_STEP = 1.5;
     var scale_factor = 1;
     var fit_scale_factor;
+    var some_modal_open = false;
 
     let code_area = document.getElementsByClassName('code')[0];
     let diagram_area = document.getElementsByClassName('diagram')[0];
@@ -770,7 +779,19 @@ PlantIDE.Viewer = (function() {
         Включение / выключение отображения окна справки
         */
         var help_dialog = document.querySelector('.fullpage-msg.controls-help');
-        help_dialog.classList.toggle('active');
+        set_modal_open(help_dialog.classList.toggle('active'));
+    }
+    function toggle_zen() {
+        /*
+        Включение / выключение режима "Дзен"
+        */
+        document.body.classList.toggle('zen');
+    }
+    function set_modal_open(is_open) {
+        some_modal_open = is_open;
+    }
+    function is_modal_open() {
+        return some_modal_open;
     }
     function get_cursor_coords(event) {
         /*
@@ -891,6 +912,9 @@ PlantIDE.Viewer = (function() {
                     case 96:  // numpad 0
                         show_all_elems();
                         break;
+                    case 90:  // Z
+                        toggle_zen();
+                        break;
                     case 97:  // numpad 1
                         move_left();
                         move_down();
@@ -941,6 +965,9 @@ PlantIDE.Viewer = (function() {
                         break;
                     case 79:  // O
                         PlantIDE.show_scheme_dialog();
+                        break;
+                    case 90:  // Z
+                        toggle_zen();
                         break;
                     default:
                         break;
@@ -1126,6 +1153,7 @@ PlantIDE.Viewer = (function() {
         LOADING_STR: 'Идет загрузка...',
         ERROR_STR: 'Ошибка загрузки:\n',
         bind_keyboard: bind_keyboard,
+        some_modal_open: some_modal_open,
         reload: function() {
             /*
             Перезагрузка Viewer
@@ -1140,6 +1168,8 @@ PlantIDE.Viewer = (function() {
             bind_keyboard();
             bind_tooltips();
         },
+        set_modal_open: set_modal_open,
+        is_modal_open: is_modal_open,
         set_codearea_content: function(text) {
             /*
             Непосредственный механизм отображения контента в окне кода

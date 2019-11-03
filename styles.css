@@ -40,6 +40,21 @@ h1 {
 }
 
 
+/* Zen-mode */
+body.zen {padding: 0;}
+body.zen h1,
+    body.zen section.upload,
+    body.zen section.view .controls button,
+    body.zen section.view .controls span,
+    body.zen section.view .node-list {display: none;}
+body.zen section.view .diagram {border-radius: 0;}
+body.zen section.view {
+    display: block;
+    padding: 0;
+}
+body.zen section.view .help {bottom: 15px;}
+
+
 /* Controls */
 button, .button {
     font-family: Arial, Helvetica, sans-serif;
